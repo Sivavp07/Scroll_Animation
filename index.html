@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scrollable Animation</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      height: 300vh; /* Makes the page scrollable */
+      background: #111;
+      font-family: Arial, sans-serif;
+    }
+
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    .loader {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <div class="loader" id="loader">Loading images...</div>
+  <canvas id="animationCanvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById("animationCanvas");
+    const context = canvas.getContext("2d");
+    const loader = document.getElementById("loader");
+
+    const frameCount = 240;
+    const images = [];
+    let imagesLoaded = 0;
+
+    function currentFrame(index) {
+      return `images/ezgif-frame-${String(index).padStart(3, "0")}.jpg`;
+    }
+
+    // Resize canvas to fit screen
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      render();
+    }
+
+    window.addEventListener("resize", resizeCanvas);
+
+    // Preload images
+    for (let i = 1; i <= frameCount; i++) {
+      const img = new Image();
+      img.src = currentFrame(i);
+      img.onload = () => {
+        imagesLoaded++;
+        if (imagesLoaded === frameCount) {
+          loader.style.display = "none";
+          render();
+        }
+      };
+      images.push(img);
+    }
+
+    const animationState = { frame: 0 };
+
+    function render() {
+      const img = images[animationState.frame];
+      if (!img) return;
+
+      context.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Maintain aspect ratio
+      const canvasRatio = canvas.width / canvas.height;
+      const imgRatio = img.width / img.height;
+
+      let drawWidth, drawHeight;
+      if (imgRatio > canvasRatio) {
+        drawHeight = canvas.height;
+        drawWidth = img.width * (canvas.height / img.height);
+      } else {
+        drawWidth = canvas.width;
+        drawHeight = img.height * (canvas.width / img.width);
+      }
+
+      const x = (canvas.width - drawWidth) / 2;
+      const y = (canvas.height - drawHeight) / 2;
+
+      context.drawImage(img, x, y, drawWidth, drawHeight);
+    }
+
+    window.addEventListener("scroll", () => {
+      const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+      const maxScrollTop = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollFraction = scrollTop / maxScrollTop;
+      const frameIndex = Math.min(
+        frameCount - 1,
+        Math.floor(scrollFraction * frameCount)
+      );
+
+      animationState.frame = frameIndex;
+      requestAnimationFrame(render);
+    });
+
+    // Initial setup
+    resizeCanvas();
+  </script>
+</body>
+</html>
